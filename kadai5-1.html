@@ -13,10 +13,35 @@
     <div id="result">結果はここに表示</div>
     <script>
         async function zip_api(myForm) {
+            // APIのベースURL
             const endpoint = "https://zipcloud.ibsnet.co.jp/api/search";
-            // ここにコードを書く
-            // zipcloudのAPI呼び出して結果を表示する
-            document.getElementById("result").innerHTML =  myForm.zipcode.value; // 現状ではそのまま表示しているだけ
+            // フォームから郵便番号を取得
+            const zipcode = myForm.zipcode.value;
+            // APIリクエスト用のURLを生成
+            const url = `${endpoint}?zipcode=${zipcode}`;
+            
+            // APIにリクエストを送信し、レスポンスを取得
+            const response = await fetch(url);
+            // レスポンスをJSON形式で解析
+            const data = await response.json();
+            
+            // 検索結果が存在する場合
+            if (data.results) {
+                // 結果表示用のHTML文字列を初期化 (ulタグ開始)
+                let resultHtml = "<ul>";
+                // 検索結果の各住所情報に対して処理を実行
+                data.results.forEach(result => {
+                    // 住所情報をliタグで囲んでHTML文字列に追加
+                    resultHtml += `<li>${result.address1}${result.address2}${result.address3}</li>`;
+                });
+                // ulタグを閉じる
+                resultHtml += "</ul>";
+                // 生成したHTMLをresult要素に表示
+                document.getElementById("result").innerHTML = resultHtml;
+            } else {
+                // 検索結果が存在しない場合、APIからのメッセージまたは固定メッセージを表示
+                document.getElementById("result").innerHTML = data.message || "該当する住所が見つかりませんでした。";
+            }
         }
     </script>
 </body>

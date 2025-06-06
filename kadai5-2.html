@@ -4,19 +4,99 @@
     <title>演習課題5-2：外部APIの呼び出しテスト</title>
 </head>
 <body>
-    <h1 id="msg">何かのAPI</h1>
+    <h1 id="msg">OpenWeatherAPI</h1>
     <form name="apiform"><p>
-        何かのフォーム：<input type="text" name="form_data">
+        アルファベットで都市名を入力してください：<input type="text" name="form_data">
         <button type="button" id="btn1" onclick="some_api(this.form)">実行</button>
     </p></form>
     
-    <div id="result"></div>
-    <script>
-        async function some_api(myForm) {
-            // ここにコードを書く
-            document.getElementById("result").innerHTML += myForm.form_data.value+"<br />";
-            document.apiform.reset();
+    <div id="result"></div>    <script>
+        
+const API_KEY = "a09c705a0fee23930a5e88593cd444bd"; 
+
+
+
+function getClothingAdvice(temp) {
+    if (temp >= 28) {
+        return "Tシャツや短パンでOK！暑いから水分補給忘れずに🌞";
+    } else if (temp >= 23) {
+        return "Tシャツに薄手の羽織りがちょうどいいかも。";
+    } else if (temp >= 18) {
+        return "長袖シャツや薄手のニットが◎";
+    } else if (temp >= 12) {
+        return "パーカーやライトジャケットがあると安心！";
+    } else if (temp >= 6) {
+        return "コートや厚手の服装で寒さ対策を！";
+    } else {
+        return "めっちゃ寒い！ダウンジャケット＋ヒートテックでガチ防寒しよう⛄️";
+    }
+}
+
+function getWeatherAdvice(temp, description) {
+    let advice = getClothingAdvice(temp); 
+
+    if (description.includes("雨") || description.includes("雷")) {
+        advice += " あと、今日は雨が降りそう☔️ 傘を忘れずに！";
+    } else if (description.includes("雪")) {
+        advice += " 雪も降るみたい❄️ 滑らないように注意！";
+    } else if (description.includes("晴")) {
+        advice += " 晴れて気持ちいい一日になりそうだね☀️";
+    }
+    
+
+    return advice;
+}
+
+
+
+async function some_api(myForm) {
+    
+    const city = myForm.form_data.value;
+    
+    
+    if (!city) {
+        document.getElementById("result").innerHTML = "都市名を入力してください。";
+        return;
+    }
+    
+    
+    const URL = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=ja`;
+    
+    try {
+        const response = await fetch(URL);
+        if (response.ok) { 
+            const data = await response.json();
+
+            const temp = data.main.temp;
+            const description = data.weather[0].description;
+
+            // 結果をHTMLで表示
+            const advice = getWeatherAdvice(temp, description);
+            const resultHtml = `
+                <h3>${city}の天気情報</h3>
+                <p><strong>気温:</strong> ${temp}℃</p>
+                <p><strong>天気:</strong> ${description}</p>
+                <p><strong>服装アドバイス:</strong> ${advice}</p>
+            `;
+            document.getElementById("result").innerHTML = resultHtml;
+        } else {
+            
+            let errorMessage = `天気情報の取得に失敗しました。ステータスコード: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                if (errorData && errorData.message) {
+                    errorMessage += ` - ${errorData.message}`;
+                }
+            } catch (e) {
+                
+                errorMessage += ` - ${response.statusText}`;
+            }
+            document.getElementById("result").innerHTML = errorMessage + "<br>都市名やAPIキー、またはネットワーク接続を確認してください。";
         }
+    } catch (error) {
+        document.getElementById("result").innerHTML = "天気情報の取得中に予期せぬエラーが発生しました。<br>ネットワーク接続やAPIエンドポイントを確認してください。";
+    }
+}
     </script>
 </body>
 </html>
